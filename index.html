@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0E1F14">
+<title>Payton Trivia · Class of 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Nunito:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0E1F14;
+  --panel:  #132B19;
+  --card:   #1A3520;
+  --green:  #2E7044;
+  --bright: #3D9955;
+  --gold:   #D4A843;
+  --cream:  #F5EDD8;
+  --dim:    rgba(245,237,216,0.6);
+  --faint:  rgba(245,237,216,0.2);
+  --red:    #D6604A;
+  --sep:    rgba(212,168,67,0.22);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; font-family:'Nunito',sans-serif; background:var(--bg); color:var(--cream); overflow:hidden; }
+.app { height:100dvh; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+
+.screen {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center;
+  transition:opacity 0.3s, transform 0.3s;
+  overflow-y:auto;
+}
+.screen.hidden { opacity:0; transform:translateY(10px); pointer-events:none; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes pop { 0%{transform:scale(0.9);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+/* ── LANDING ── */
+#landingScreen {
+  background:var(--bg); justify-content:flex-start;
+  padding:0 24px 48px;
+}
+#landingScreen::before {
+  content:''; position:fixed; top:0;left:0;right:0;height:50%;
+  background:radial-gradient(ellipse at 50% 0%, rgba(61,153,85,0.13) 0%, transparent 65%);
+  pointer-events:none;
+}
+.land-inner {
+  display:flex; flex-direction:column; align-items:center; width:100%;
+  padding-top:max(env(safe-area-inset-top),36px); position:relative; gap:0;
+}
+.school-pill {
+  display:flex; align-items:center; gap:7px;
+  background:rgba(212,168,67,0.1); border:1px solid rgba(212,168,67,0.3);
+  border-radius:40px; padding:6px 16px; margin-bottom:20px;
+  font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--gold); font-weight:700;
+}
+.hero-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:38px; font-weight:600; color:var(--cream);
+  text-align:center; line-height:1.1; margin-bottom:6px;
+}
+.hero-sub {
+  font-size:14px; color:var(--dim); text-align:center;
+  margin-bottom:28px; line-height:1.5;
+}
+.stats-row {
+  display:flex; gap:16px; margin-bottom:32px;
+}
+.stat-chip {
+  background:var(--card); border:1px solid var(--sep);
+  border-radius:10px; padding:12px 18px; text-align:center;
+}
+.stat-n { font-family:'Cormorant Garamond',serif; font-size:28px; color:var(--gold); font-weight:600; line-height:1; }
+.stat-l { font-size:10px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-top:3px; }
+
+.field-wrap { width:100%; max-width:320px; margin-bottom:16px; }
+.field-lbl { display:block; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:rgba(245,237,216,0.4); margin-bottom:7px; font-weight:600; }
+.text-inp {
+  width:100%; background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12);
+  border-radius:10px; padding:14px 16px; font-family:'Nunito',sans-serif;
+  font-size:16px; color:var(--cream); outline:none; transition:border-color 0.2s;
+}
+.text-inp::placeholder { color:rgba(245,237,216,0.3); }
+.text-inp:focus { border-color:rgba(61,153,85,0.6); }
+
+.start-btn {
+  width:100%; max-width:320px; padding:16px;
+  background:var(--gold); color:#0E1F14;
+  border:none; border-radius:12px; font-family:'Nunito',sans-serif;
+  font-size:17px; font-weight:800; cursor:pointer; letter-spacing:0.5px;
+  transition:opacity 0.2s, transform 0.1s;
+}
+.start-btn:disabled { opacity:0.3; pointer-events:none; }
+.start-btn:not(:disabled):active { transform:scale(0.98); }
+
+.tiers-preview {
+  width:100%; max-width:320px;
+  display:flex; flex-direction:column; gap:8px; margin-top:24px;
+}
+.tier-row {
+  display:flex; align-items:center; gap:10px;
+  background:var(--card); border-radius:8px; padding:10px 14px;
+  font-size:13px; color:var(--dim);
+}
+.tier-badge { font-size:15px; }
+
+/* ── QUESTION ── */
+#questionScreen {
+  background:var(--bg); justify-content:flex-start;
+  padding:max(env(safe-area-inset-top),20px) 20px 24px;
+}
+.q-header {
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; flex-shrink:0;
+}
+.q-progress-wrap {
+  flex:1; background:rgba(255,255,255,0.08); border-radius:4px; height:6px; overflow:hidden; margin-right:12px;
+}
+.q-progress-bar {
+  height:100%; background:linear-gradient(90deg, var(--green), var(--bright));
+  border-radius:4px; transition:width 0.4s ease;
+}
+.q-counter { font-size:12px; color:var(--dim); font-weight:700; letter-spacing:1px; white-space:nowrap; }
+.q-score-live { font-size:12px; color:var(--gold); font-weight:700; }
+
+.tier-label {
+  font-size:10px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--gold); margin-bottom:8px; flex-shrink:0;
+}
+.question-text {
+  font-family:'Cormorant Garamond',serif;
+  font-size:26px; color:var(--cream); font-weight:600;
+  line-height:1.35; margin-bottom:22px; flex-shrink:0;
+}
+
+.options-list { display:flex; flex-direction:column; gap:10px; width:100%; flex-shrink:0; }
+.opt-btn {
+  width:100%; padding:14px 16px; border-radius:10px;
+  background:var(--card); border:1.5px solid var(--sep);
+  display:flex; align-items:center; gap:12px;
+  font-family:'Nunito',sans-serif; font-size:15px; color:var(--cream);
+  cursor:pointer; transition:all 0.25s; text-align:left;
+}
+.opt-btn:active { transform:scale(0.98); }
+.opt-btn.correct { background:rgba(61,153,85,0.25); border-color:var(--bright); color:var(--cream); }
+.opt-btn.wrong   { background:rgba(214,96,74,0.15);  border-color:var(--red); opacity:0.7; }
+.opt-btn.locked  { pointer-events:none; }
+.opt-letter-badge {
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(212,168,67,0.12); border:1px solid rgba(212,168,67,0.25);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:var(--gold); flex-shrink:0;
+}
+.opt-btn.correct .opt-letter-badge { background:var(--bright); border-color:var(--bright); color:#0E1F14; }
+.opt-btn.wrong   .opt-letter-badge { background:var(--red); border-color:var(--red); color:white; }
+
+.fun-fact-box {
+  margin-top:14px; padding:14px 16px;
+  background:var(--panel); border-left:3px solid var(--gold);
+  border-radius:0 10px 10px 0;
+  font-family:'Caveat',cursive; font-size:18px; color:var(--cream);
+  line-height:1.45; opacity:0; transform:translateY(8px);
+  transition:all 0.4s ease; flex-shrink:0;
+}
+.fun-fact-box.show { opacity:1; transform:translateY(0); }
+
+.next-btn {
+  margin-top:16px; width:100%; padding:14px;
+  background:var(--gold); color:#0E1F14;
+  border:none; border-radius:12px; font-family:'Nunito',sans-serif;
+  font-size:15px; font-weight:800; cursor:pointer;
+  opacity:0; pointer-events:none; transition:opacity 0.3s; flex-shrink:0;
+}
+.next-btn.show { opacity:1; pointer-events:all; }
+
+/* ── RESULTS ── */
+#resultsScreen {
+  background:var(--bg); justify-content:center; align-items:center;
+  gap:16px; padding:24px; text-align:center;
+}
+#resultsScreen::before {
+  content:''; position:fixed; inset:0;
+  background:radial-gradient(ellipse at 50% 35%, rgba(212,168,67,0.1) 0%, transparent 55%);
+  pointer-events:none;
+}
+.result-trophy { font-size:60px; position:relative; z-index:1; animation:pop 0.5s ease both; }
+.result-name { font-family:'Cormorant Garamond',serif; font-size:32px; color:var(--cream); font-weight:600; position:relative; z-index:1; }
+.score-display {
+  background:var(--card); border:1px solid var(--sep);
+  border-radius:16px; padding:20px 32px; position:relative; z-index:1;
+}
+.score-big { font-family:'Cormorant Garamond',serif; font-size:60px; color:var(--gold); font-weight:700; line-height:1; }
+.score-label { font-size:13px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+.rank-badge {
+  background:rgba(212,168,67,0.12); border:1px solid rgba(212,168,67,0.3);
+  border-radius:40px; padding:8px 20px;
+  font-size:14px; font-weight:700; color:var(--gold);
+  position:relative; z-index:1;
+}
+.result-note {
+  font-family:'Caveat',cursive; font-size:20px; color:var(--dim);
+  max-width:280px; line-height:1.4; position:relative; z-index:1;
+}
+.submit-score-btn {
+  width:100%; max-width:320px; padding:15px;
+  background:var(--gold); color:#0E1F14;
+  border:none; border-radius:12px; font-family:'Nunito',sans-serif;
+  font-size:16px; font-weight:800; cursor:pointer;
+  position:relative; z-index:1;
+  transition:opacity 0.2s;
+}
+.submit-score-btn:disabled { opacity:0.35; }
+
+/* ── SUCCESS ── */
+#successScreen {
+  background:var(--bg); justify-content:center; align-items:center;
+  gap:20px; padding:24px; text-align:center;
+}
+#successScreen::before {
+  content:''; position:fixed; inset:0;
+  background:radial-gradient(ellipse at 50% 40%, rgba(61,153,85,0.1) 0%, transparent 55%);
+  pointer-events:none;
+}
+.success-icon { font-size:64px; position:relative; z-index:1; }
+.success-title { font-family:'Cormorant Garamond',serif; font-size:32px; color:var(--cream); font-weight:600; position:relative; z-index:1; }
+.success-sub { font-size:15px; color:var(--dim); line-height:1.65; max-width:280px; position:relative; z-index:1; }
+.success-sub strong { color:var(--bright); font-weight:600; }
+.leaderboard-preview {
+  width:100%; max-width:320px; background:var(--card); border:1px solid var(--sep);
+  border-radius:12px; overflow:hidden; position:relative; z-index:1;
+}
+.lb-header { padding:10px 16px; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); font-weight:700; border-bottom:1px solid var(--sep); }
+.lb-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(212,168,67,0.1); }
+.lb-row:last-child { border-bottom:none; }
+.lb-rank { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--gold); font-weight:700; min-width:24px; }
+.lb-name { flex:1; font-size:14px; font-weight:600; color:var(--cream); }
+.lb-score { font-size:13px; color:var(--bright); font-weight:700; }
+.lb-row.highlight { background:rgba(212,168,67,0.07); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- LANDING -->
+<div class="screen" id="landingScreen">
+  <div class="land-inner">
+    <div class="school-pill"><span>🦁</span> Flying Lions · Class of 2026</div>
+    <div class="hero-title">How Well Do<br>You Know Payton?</div>
+    <div class="hero-sub">15 questions. Three difficulty tiers.<br>One leaderboard on the big screen.</div>
+    <div class="stats-row">
+      <div class="stat-chip"><div class="stat-n">15</div><div class="stat-l">Questions</div></div>
+      <div class="stat-chip"><div class="stat-n">3</div><div class="stat-l">Tiers</div></div>
+      <div class="stat-chip"><div class="stat-n">🏆</div><div class="stat-l">TV Board</div></div>
+    </div>
+    <div class="field-wrap">
+      <label class="field-lbl">Your name</label>
+      <input class="text-inp" id="playerName" type="text" placeholder="e.g. Uncle Mike" maxlength="24" autocomplete="off"
+        oninput="checkNameReady()">
+    </div>
+    <button class="start-btn" id="startBtn" disabled onclick="startGame()">Start the Trivia →</button>
+    <div class="tiers-preview">
+      <div class="tier-row"><span class="tier-badge">🟢</span> Easy — 5 questions</div>
+      <div class="tier-row"><span class="tier-badge">🟡</span> Medium — 5 questions</div>
+      <div class="tier-row"><span class="tier-badge">🔴</span> Hard — 5 questions</div>
+    </div>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="screen hidden" id="questionScreen">
+  <div class="q-header">
+    <div class="q-progress-wrap"><div class="q-progress-bar" id="progressBar"></div></div>
+    <div class="q-counter" id="qCounter">1 / 15</div>
+    <div class="q-score-live" id="scoreLive" style="margin-left:10px">0 ✓</div>
+  </div>
+  <div class="tier-label" id="tierLabel"></div>
+  <div class="question-text" id="questionText"></div>
+  <div class="options-list" id="optionsList"></div>
+  <div class="fun-fact-box" id="funFactBox"></div>
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next →</button>
+</div>
+
+<!-- RESULTS -->
+<div class="screen hidden" id="resultsScreen">
+  <div class="result-trophy" id="resultTrophy">🏆</div>
+  <div class="result-name" id="resultName"></div>
+  <div class="score-display">
+    <div class="score-big" id="scoreBig">0/15</div>
+    <div class="score-label">Your Final Score</div>
+  </div>
+  <div class="rank-badge" id="rankBadge"></div>
+  <div class="result-note" id="resultNote"></div>
+  <button class="submit-score-btn" id="submitScoreBtn" onclick="submitScore()">Post to the Leaderboard →</button>
+</div>
+
+<!-- SUCCESS -->
+<div class="screen hidden" id="successScreen">
+  <div class="success-icon">🎓</div>
+  <div class="success-title">You're on the board!</div>
+  <p class="success-sub">Look at the TV — your score is <strong>live on Payton's leaderboard</strong> right now.</p>
+  <div class="leaderboard-preview">
+    <div class="lb-header">Live Leaderboard</div>
+    <div id="lbRows"><div style="padding:16px;text-align:center;color:var(--dim);font-size:13px;">Loading...</div></div>
+  </div>
+</div>
+
+</div>
+<script>
+const SUPA_URL = 'https://ykfvwqewnfnibpzytspn.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrZnZ3cWV3bmZuaWJwenl0c3BuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MjE2NzYsImV4cCI6MjA5MDM5NzY3Nn0.cnMltZVHDV3Hof-26aRi4NIM7wKwjzxAfoMBR3oItms';
+const PROP_ID  = 'payton-2026';
+
+const trivia = [
+  { tier:"🟢 Easy",   q:"When is Payton's birthday?",                                                    opts:["October 11th","October 12th","October 13th","October 14th"],                           ans:2, fun:"October 13th. If you're family and missed that — yikes." },
+  { tier:"🟢 Easy",   q:"What mid-2010s media franchise is Payton's all-time favorite?",                  opts:["Five Nights at Freddy's","Bendy and the Ink Machine","Pokémon","Hello Neighbor"],        ans:0, fun:"FNAF. Freddy Fazbear has lived rent-free in his head for years." },
+  { tier:"🟢 Easy",   q:"Payton played which sport?",                                                     opts:["Soccer","Swimming","Track","Baseball"],                                                 ans:1, fun:"Swimming. The man was in the pool." },
+  { tier:"🟢 Easy",   q:"Which food category does Payton like most?",                                     opts:["Sour","Sweet","Spicy","Savory"],                                                        ans:1, fun:"Sweet tooth confirmed. Dessert first, questions later." },
+  { tier:"🟢 Easy",   q:"Which school did Payton just graduate from?",                                    opts:["Excelsior Classical Academy","Voyager High School","Sunny Side Public School","East Durham High School"], ans:0, fun:"Excelsior Classical Academy. Flying Lions forever." },
+  { tier:"🟡 Medium", q:"Which major event happened the same year Payton was born?",                      opts:["The Invasion of Iraq","Release of the iPhone","The Great Recession","Blockbuster closes"], ans:1, fun:"Same year as the iPhone. Both changed the world." },
+  { tier:"🟡 Medium", q:"Which school subject was NOT a favorite of Payton's?",                           opts:["History","Math","Science","English"],                                                   ans:1, fun:"Math. The NHS membership makes this even more surprising." },
+  { tier:"🟡 Medium", q:"What country has Payton NOT been to?",                                           opts:["France","Greece","Mexico","United Kingdom"],                                            ans:3, fun:"UK is still on the list. Consider this his sign." },
+  { tier:"🟡 Medium", q:"What was Payton's first pet?",                                                   opts:["Golden Retriever","Pet Rat","Ant Colony","Pet Fish"],                                   ans:3, fun:"Pet fish. Everyone starts somewhere. Ruby was the glow-up." },
+  { tier:"🟡 Medium", q:"From which nation does the name Payton originate?",                              opts:["Germany","Norway","Ireland","England"],                                                 ans:2, fun:"Ireland. Fighting Irish energy confirmed." },
+  { tier:"🔴 Hard",   q:"Which country gained independence within Payton's lifetime?",                    opts:["Montenegro","East Timor","South Sudan","North Arabia"],                                 ans:2, fun:"South Sudan — 2011. Payton was already 3. A man of history." },
+  { tier:"🔴 Hard",   q:"As a kid, Payton needed a specialist for which subject — though he now excels at it?", opts:["Reading","Math","Speaking","Physical Education"],                               ans:0, fun:"Reading. NHS. Never ever count Payton out." },
+  { tier:"🔴 Hard",   q:"Payton primarily collects Lego Star Wars sets from which faction?",               opts:["The Separatists","The Clone Army","The Empire","The Rebels"],                          ans:0, fun:"The Separatists. Droids > everyone else, apparently." },
+  { tier:"🔴 Hard",   q:"What was Payton's FIRST major obsession — before FNAF?",                         opts:["Five Nights at Freddy's","My Little Pony","Thomas the Tank Engine","Angry Birds"],      ans:2, fun:"Thomas the Tank Engine. The origin story. Choo choo." },
+  { tier:"🔴 Hard",   q:"What video game genre does Payton love — playing as a nation competing with others?", opts:["Grand Strategy Games","History Games","Nation Games","Map Games"],               ans:0, fun:"Grand Strategy. EU4, HoI4 energy. Basically a world leader." },
+];
+
+let playerName = '';
+let qi = 0, score = 0, answered = false;
+
+function checkNameReady() {
+  document.getElementById('startBtn').disabled =
+    !document.getElementById('playerName').value.trim();
+}
+
+function startGame() {
+  playerName = document.getElementById('playerName').value.trim();
+  qi = 0; score = 0;
+  showScreen('questionScreen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = trivia[qi];
+  const pct = (qi / trivia.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('qCounter').textContent = (qi+1) + ' / ' + trivia.length;
+  document.getElementById('scoreLive').textContent = score + ' ✓';
+  document.getElementById('tierLabel').textContent = q.tier;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('funFactBox').textContent = '';
+  document.getElementById('funFactBox').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  answered = false;
+
+  const list = document.getElementById('optionsList');
+  list.innerHTML = q.opts.map((o,i) => `
+    <button class="opt-btn" onclick="answer(${i})">
+      <div class="opt-letter-badge">${String.fromCharCode(65+i)}</div>
+      ${o}
+    </button>
+  `).join('');
+}
+
+function answer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = trivia[qi];
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach((b,i) => {
+    b.classList.add('locked');
+    if (i === q.ans) b.classList.add('correct');
+    else if (i === idx) b.classList.add('wrong');
+  });
+  if (idx === q.ans) score++;
+  document.getElementById('scoreLive').textContent = score + ' ✓';
+  const ff = document.getElementById('funFactBox');
+  ff.textContent = (idx === q.ans ? '✓ ' : '✗ ') + q.fun;
+  ff.classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+  document.getElementById('nextBtn').textContent =
+    qi < trivia.length - 1 ? 'Next →' : 'See My Score →';
+}
+
+function nextQuestion() {
+  qi++;
+  if (qi >= trivia.length) { showResults(); return; }
+  renderQuestion();
+}
+
+function showResults() {
+  showScreen('resultsScreen');
+  const pct = score / trivia.length;
+  let trophy, rank, note;
+  if (pct >= 0.93)      { trophy='🏆'; rank='Payton Expert';      note='"You might know Payton better than he knows himself."'; }
+  else if (pct >= 0.73) { trophy='🥇'; rank='True Fan';           note='"Solid. You have been paying attention."'; }
+  else if (pct >= 0.47) { trophy='🥈'; rank='Casual Fan';         note='"Not bad. Room to grow your Payton knowledge."'; }
+  else                  { trophy='🎖';  rank='Proud Supporter';    note='"You showed up. That\'s what matters."'; }
+
+  document.getElementById('resultTrophy').textContent = trophy;
+  document.getElementById('resultName').textContent = playerName;
+  document.getElementById('scoreBig').textContent = score + '/15';
+  document.getElementById('rankBadge').textContent = rank;
+  document.getElementById('resultNote').textContent = note;
+}
+
+async function submitScore() {
+  const btn = document.getElementById('submitScoreBtn');
+  btn.disabled = true;
+  btn.textContent = 'Posting...';
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/graduation_trivia_scores`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey': ANON_KEY,
+        'Authorization': `Bearer ${ANON_KEY}`,
+        'Prefer':'return=minimal'
+      },
+      body: JSON.stringify({
+        guest_name: playerName,
+        score: score,
+        total: trivia.length,
+        property_id: PROP_ID
+      })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    showScreen('successScreen');
+    loadLeaderboard();
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Try Again';
+    console.error(e);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/graduation_trivia_scores?property_id=eq.${PROP_ID}&order=score.desc&limit=5`,
+      { headers:{ 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` } }
+    );
+    const rows = await res.json();
+    const container = document.getElementById('lbRows');
+    if (!rows.length) { container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--dim);font-size:13px;">You\'re the first one!</div>'; return; }
+    const medals = ['🥇','🥈','🥉','4','5'];
+    container.innerHTML = rows.map((r,i) => `
+      <div class="lb-row ${r.guest_name===playerName?'highlight':''}">
+        <div class="lb-rank">${medals[i]||i+1}</div>
+        <div class="lb-name">${r.guest_name}</div>
+        <div class="lb-score">${r.score}/${r.total}</div>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s =>
+    s.classList.toggle('hidden', s.id !== id)
+  );
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
